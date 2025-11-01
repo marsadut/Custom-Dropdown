@@ -1,1 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Dropdown Menu</title>
+    <style>
+        /* --- 1. CSS & Layouting --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: grid;
+            place-items: center;
+            min-height: 400px; /* Beri ruang agar dropdown terlihat */
+            padding: 20px;
+        }
 
+        /* --- Positioning ---
+         * Wrapper ini menggunakan position: relative
+         * sebagai 'jangkar' untuk daftar dropdown.
+         */
+        .select-menu {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Tombol pemicu (Default state / Selected state) */
+        .select-trigger {
+            /* Layouting dengan Flexbox */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .chevron {
+            font-family: monospace;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        /* --- Positioning ---
+         * Daftar Opsi menggunakan position: absolute
+         * untuk 'mengambang' di bawah tombol pemicu.
+         */
+        .select-options {
+            position: absolute;
+            top: 100%; /* Tepat di bawah pemicu */
+            left: 0;
+            width: 100%;
+            background-color: #fff;
+            border: 2px solid #000;
+            border-top: none; /* Hapus border atas agar menempel */
+            border-radius: 0 0 12px 12px;
+            
+            /* Trik Animasi: Sembunyikan secara default */
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            
+            /* Accessibility */
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            z-index: 10; /* Pastikan di atas konten lain */
+        }
+
+        /* --- State Terbuka (Open state) --- */
+        /* Kelas ini ditambahkan oleh JavaScript */
+        .select-menu.is-open .select-options {
+            max-height: 300px; /* Atur ke tinggi maksimum */
+            opacity: 1;
+            /* Perbaiki radius pemicu agar sudutnya tajam */
+            border-radius: 12px 12px 0 0;
+        }
+        
+        /* Memperbaiki radius pemicu saat terbuka */
+        .select-menu.is-open .select-trigger {
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* Membalik panah chevron */
+        .select-menu.is-open .chevron {
+            transform: rotate(180deg);
+        }
+
+        /* --- Item Opsi --- */
+        .option {
+            /* Layouting dengan Flexbox */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            
+            padding: 12px 15px;
+            cursor: pointer;
+            border-top: 1px solid #eee; /* Garis pemisah */
+        }
+        
+        .option:hover {
+            background-color: #f0f0f0;
+        }
+
+        .checkmark {
+            font-size: 1.2em;
+            visibility: hidden; /* Sembunyikan centang */
+        }
+        
+        /* Tampilkan centang jika item 'is-selected' */
+        .option.is-selected .checkmark {
+            visibility: visible;
+        }
+        
+        /* Beri gaya pada teks item yang dipilih */
+        .option.is-selected {
+            font-weight: bold;
+        }
+        
+        /* Ubah warna teks pemicu saat item dipilih */
+        .select-menu.has-selection .selected-text {
+            color: #000;
+            font-weight: 500;
+        }
+        
+        /* Teks placeholder default */
+        .selected-text {
+            color: #888;
+        }
+
+    </style>
+</head>
+<body>
+
+    <main>
+        <div class="select-menu" id="custom-select">
+            
+            <button class="select-trigger" id="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="selected-text" id="selected-text">Select an Item</span>
+                <span class="chevron">v</span>
+            </button>
+            
+            <ul class="select-options" id="select-options" role="listbox">
+                <li class="option" role="option" data-value="First Item">
+                    <span>First Item</span>
+                    <span class="checkmark">✔</span>
+                </li>
+                <li class="option" role="option" data-value="Second Item">
+                    <span>Second Item</span>
+                    <span class="checkmark">✔</span>
+                </li>
+                <li class="option" role="option" data-value="Third Item">
+                    <span>Third Item</span>
+                    <span class="checkmark">✔</span>
+                </li>
+                <li class="option" role="option" data-value="Fourth Item">
+                    <span>Fourth Item</span>
+                    <span class="checkmark">✔</span>
+                </li>
+                <li class="option" role="option" data-value="Fifth Item">
+                    <span>Fifth Item</span>
+                    <span class="checkmark">✔</span>
+                </li>
+            </ul>
+        </div>
+    </main>
+
+
+    <script>
+        // 1. Dapatkan semua elemen yang diperlukan
+        const selectMenu = document.getElementById('custom-select');
+        const selectTrigger = document.getElementById('select-trigger');
+        const selectedText = document.getElementById('selected-text');
+        const allOptions = document.querySelectorAll('.option');
+
+        // 2. FUNGSI: Buka/Tutup dropdown
+        function toggleDropdown() {
+            // Toggle kelas 'is-open' pada wrapper
+            selectMenu.classList.toggle('is-open');
+            
+            // Toggle atribut ARIA untuk aksesibilitas
+            const isExpanded = selectMenu.classList.contains('is-open');
+            selectTrigger.setAttribute('aria-expanded', isExpanded);
+        }
+
+        // 3. FUNGSI: Pilih item
+        function selectItem(e) {
+            // Dapatkan nilai dari item yang diklik
+            const selectedValue = e.currentTarget.dataset.value;
+            
+            // 1. Update teks pada tombol pemicu
+            selectedText.textContent = selectedValue;
+            
+            // 2. Tambahkan kelas 'has-selection' untuk styling
+            selectMenu.classList.add('has-selection');
+
+            // 3. Hapus kelas 'is-selected' dari SEMUA opsi
+            allOptions.forEach(option => {
+                option.classList.remove('is-selected');
+            });
+            
+            // 4. Tambahkan kelas 'is-selected' HANYA ke opsi yang diklik
+            e.currentTarget.classList.add('is-selected');
+            
+            // 5. Tutup dropdown
+            toggleDropdown();
+        }
+
+        // --- Tambahkan Event Listeners ---
+
+        // Buka/tutup dropdown saat pemicu diklik
+        selectTrigger.addEventListener('click', toggleDropdown);
+
+        // Pilih item saat opsi diklik
+        allOptions.forEach(option => {
+            option.addEventListener('click', selectItem);
+        });
+
+        // (Bonus): Tutup dropdown saat mengklik di luar
+        window.addEventListener('click', (e) => {
+            // Cek apakah yang diklik BUKAN bagian dari select-menu
+            if (!selectMenu.contains(e.target)) {
+                // Dan pastikan menu sedang terbuka
+                if (selectMenu.classList.contains('is-open')) {
+                    toggleDropdown();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
